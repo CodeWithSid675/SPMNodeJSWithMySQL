@@ -5,8 +5,10 @@ var sql = require('mysql');
 var port = process.env.port || 1337;
 var con = require('./connection/connect')
 var cors = require('cors');
+var sendMail = require('./connection/sendmail')
 var router = express.Router();
 var stringify = require('json-stringify-safe');
+const nodemailer = require("nodemailer");
 
 con.connect(function(err){
     if(err) throw err;
@@ -24,7 +26,7 @@ app.get('/speeches',(req,res) => {
     let sqlQuery = 'SELECT * FROM myappdb.speech';
     let query = con.query(sqlQuery,(err,result)=>{
         if(err) throw err;
-        console.log("res => "+stringify(res));
+        console.log("res => "+stringify(result));
         let accResponse = [];
         for(let i=0;i<result.length;i++){
           let accResult = {
@@ -43,8 +45,7 @@ app.get('/speeches',(req,res) => {
 
 //insert data in db api
 app.post('/speeches',(req,res)=>{
-  let request = stringify(req);
-  console.log("req => "+request);
+  // console.log("req => "+req);
     let data = {date:req.body.date,subject_keyword:req.body.subjectKeyword,speech_content:req.body.speechContent,author:req.body.author,id:req.body.id,user_id:req.body.userId}
     let sql = "INSERT INTO myappdb.speech SET ?";
     let query = con.query(sql, data,(err, results) => {
@@ -73,6 +74,42 @@ app.put('/speeches',(req, res) => {
   });
 });
 
+// const sendMail = (user, callback) => {
+//   const transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     port: 587,
+//     secure: false,
+//     auth: {
+//       user: "<sender email>",
+//       pass: "<password>"
+//     }
+//   }); 
+// }
+
+// const mailOptions = {
+//   from: `"<Sender’s name>", "<Sender’s email>"`,
+//   to: `<${user.email}>`,
+//   subject: "<Message subject>",
+//   html: "<h1>And here is the place for HTML</h1>"
+// };
+
+// transporter.sendMail(mailOptions, callback);
+
+app.post("/sendmail", (req, res) => {
+  console.log("request came");
+  let user = req.body;
+  console.log("user data = > ",stringify(user))
+  sendMail(user, (err, info) => {
+    if (err) {
+      console.log(err);
+      res.status(400);
+      res.send({ error: "Failed to send email" });
+    } else {
+      console.log("Email has been sent");
+      res.status(200).send(info);
+    }
+  });
+});
 
 // var speechController = require('./controllers/SpeechController')();
 
