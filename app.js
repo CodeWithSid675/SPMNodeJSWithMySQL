@@ -69,7 +69,54 @@ app.get('/speeches/:mailId', (req, res) => {
   });
 });
 
+
+// get all speech by mail id
+app.get('/speeches/share/:mailId', (req, res) => {
+  let id = req.params.mailId;
+  let sqlQuery = 'SELECT * FROM myappdb.users u join myappdb.share m on u.email = m.user_id join myappdb.speech s on s.id = m.speech_id where u.email ='+stringify(id);
+  // console.log("get query " + sqlQuery);
+  let query = con.query(sqlQuery, (err, result) => {
+    if (err) throw err;
+    // console.log("res => " + stringify(result));
+    let accResponse = [];
+    for (let i = 0; i < result.length; i++) {
+      let accResult = {
+        "id": result[i].id,
+        "author": result[i].author,
+        "date": result[i].date,
+        "speechContent": result[i].speech_content,
+        "subjectKeyword": result[i].subject_keyword,
+        "userId": result[i].user_id
+      }
+      accResponse.push(accResult);
+    }
+    res.status(200).send(accResponse);
+  });
+});
+
 //insert data in db api
+app.post('/speeches', (req, res) => {
+  // console.log("req => "+req);
+  let data = { date: req.body.date, subject_keyword: req.body.subjectKeyword, speech_content: req.body.speechContent, author: req.body.author, id: req.body.id, user_id: req.body.userId,mail_id: req.body.mailId }
+  let sql = "INSERT INTO myappdb.speech SET ?";
+  let query = con.query(sql, data, (err, results) => {
+    if (err) throw err;
+    res.status(200).send(JSON.stringify({ "status": 200, "error": null, "response": results }));
+  });
+});
+
+//share data in db api
+app.post('/speeches/share', (req, res) => {
+  // console.log("req => "+req);
+  let data = { user_id: req.body.userId, speech_id : req.body.speechId }
+  let sql = "INSERT INTO myappdb.share SET ?";
+  let query = con.query(sql, data, (err, results) => {
+    if (err) throw err;
+    res.status(200).send(JSON.stringify({ "status": 200, "error": null, "response": results }));
+  });
+});
+
+//insert data in db api for particular api
 app.post('/speeches', (req, res) => {
   // console.log("req => "+req);
   let data = { date: req.body.date, subject_keyword: req.body.subjectKeyword, speech_content: req.body.speechContent, author: req.body.author, id: req.body.id, user_id: req.body.userId,mail_id: req.body.mailId }
